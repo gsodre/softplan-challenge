@@ -14,19 +14,30 @@ import { Search } from "@material-ui/icons";
 import { useLazyQuery } from "@apollo/react-hooks";
 import { Skeleton, Pagination, AlertTitle, Alert } from "@material-ui/lab";
 
+import {
+  GET_CHARACTERS,
+  GET_FILTERED_CHARACTERS,
+} from "shared/graphQL/queries";
 import { useStyles } from "./styles";
+import { useHistory } from "react-router-dom";
 import { ICharacters } from "shared/interfaces";
-import { GET_CHARACTERS } from "shared/graphQL/queries";
 
 export const Home: React.FC = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [activePage, setActivePage] = useState(1);
   const [searchParam, setSearchParam] = useState("");
+  const [totalPagesCached, setTotalPagesCached] = useState(0);
   const [characters, setCharacters] = useState<ICharacters[]>([]);
+  const [characterFiltered, setCharacterFiltered] = useState<ICharacters[]>([]);
 
   const [getCharacters, { loading: loadingChar, data: dataChar }] =
     useLazyQuery(GET_CHARACTERS);
+  const [
+    getCharacterByName,
+    { loading: loadingCharByName, data: dataCharByName },
+  ] = useLazyQuery(GET_FILTERED_CHARACTERS);
 
+  const history = useHistory();
   const { search, searchIcon, inputRoot, input, card, media } = useStyles();
 
   useEffect(() => {
@@ -39,9 +50,30 @@ export const Home: React.FC = () => {
     if (dataChar) {
       const { data, total } = dataChar.charactersWithTotal;
       setCharacters(data);
+      setCharacterFiltered(data);
       setTotalPages(Math.round(total / 20));
+      setTotalPagesCached(Math.round(total / 20));
     }
   }, [dataChar]);
+
+  useEffect(() => {
+    if (dataCharByName) {
+      setCharacterFiltered(dataCharByName.characters);
+      setTotalPages(Math.round(dataCharByName.characters.length / 20));
+    } else {
+      setCharacterFiltered(characters);
+      setTotalPages(totalPagesCached);
+    }
+  }, [characters, setTotalPages, totalPagesCached, dataCharByName]);
+
+  useEffect(() => {
+    if (searchParam.trim().length > 2) {
+      getCharacterByName({ variables: { nameStartsWith: searchParam } });
+    } else {
+      setCharacterFiltered(characters);
+      setTotalPages(totalPagesCached);
+    }
+  }, [characters, getCharacterByName, searchParam, totalPagesCached]);
 
   const skeleton = (
     <Grid container item lg={3} md={3} sm={4}>
@@ -82,11 +114,14 @@ export const Home: React.FC = () => {
       <Box marginBottom={3} />
 
       <Grid container spacing={2}>
-        {loadingChar
+        {loadingChar && loadingCharByName
           ? Array(12).fill(skeleton)
-          : characters?.map((item) => (
+          : characterFiltered?.map((item) => (
               <Grid container item lg={3} md={3} sm={4} key={item.id}>
-                <Card className={card}>
+                <Card
+                  className={card}
+                  onClick={() => history.push(`/details/${item.id}`)}
+                >
                   <CardActionArea>
                     <CardMedia
                       className={media}
@@ -119,7 +154,7 @@ export const Home: React.FC = () => {
 
       <Box marginBottom={3} />
 
-      {!loadingChar && characters?.length < 1 && (
+      {!loadingChar && !loadingCharByName && characterFiltered?.length < 1 && (
         <Grid item sm={12}>
           <Alert severity="info">
             <AlertTitle>Info</AlertTitle>
