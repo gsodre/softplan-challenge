@@ -12,3 +12,13 @@ export const GET_CHARACTERS = gql`
     }
   }
 `;
+
+export const GET_FILTERED_CHARACTERS = gql`
+  query Character($nameStartsWith: String!) {
+    characters(where: { nameStartsWith: $nameStartsWith }) {
+      id
+      name
+      thumbnail
+    }
+  }
+`;
