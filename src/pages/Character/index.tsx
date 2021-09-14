@@ -3,9 +3,11 @@ import {
   Box,
   Button,
   Card,
+  CardActions,
   CardContent,
   CardHeader,
   CardMedia,
+  Collapse,
   Container,
   Dialog,
   DialogActions,
@@ -14,6 +16,10 @@ import {
   DialogTitle,
   Grid,
   IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
   Snackbar,
   TextField,
   Typography,
@@ -21,7 +27,7 @@ import {
 import { useParams } from "react-router";
 import { useHistory } from "react-router-dom";
 import { Alert, Skeleton } from "@material-ui/lab";
-import { ArrowBack, Edit } from "@material-ui/icons";
+import { ArrowBack, Edit, Star } from "@material-ui/icons";
 import { useLazyQuery, useMutation } from "@apollo/react-hooks";
 
 import { useStyles } from "./styles";
@@ -37,7 +43,8 @@ export const Character: React.FC = () => {
 
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
-  const { card, media } = useStyles();
+  const { card, list, media } = useStyles();
+  const [expanded, setExpanded] = useState(false);
 
   const handleSubmit = useCallback(
     async (event: any) => {
@@ -66,6 +73,8 @@ export const Character: React.FC = () => {
 
     setSnackbarOpen(false);
   };
+
+  const handleExpandClick = () => setExpanded(!expanded);
 
   useEffect(() => {
     if (data) {
@@ -136,16 +145,37 @@ export const Character: React.FC = () => {
                   title={character?.name}
                 />
                 <CardContent>
-                  <Typography
-                    variant="body2"
-                    color="textSecondary"
-                    component="p"
-                  >
+                  <Typography variant="body2" color="primary" component="p">
                     {character?.description
                       ? character?.description
                       : "Character without description"}
                   </Typography>
                 </CardContent>
+
+                <CardActions style={{ justifyContent: "flex-end" }}>
+                  <Button onClick={handleExpandClick} color="primary">
+                    {expanded ? "Hide your series" : "Show your series"}
+                  </Button>
+                </CardActions>
+                <Collapse in={expanded} timeout="auto" unmountOnExit>
+                  <CardContent>
+                    {character?.series?.map((item: any) => (
+                      <List
+                        component="nav"
+                        className={list}
+                        aria-label="contacts"
+                        key={item.name}
+                      >
+                        <ListItem button>
+                          <ListItemIcon>
+                            <Star />
+                          </ListItemIcon>
+                          <ListItemText primary={item.name} />
+                        </ListItem>
+                      </List>
+                    ))}
+                  </CardContent>
+                </Collapse>
               </Card>
             )}
           </Grid>
