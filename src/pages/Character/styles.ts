@@ -9,5 +9,8 @@ export const useStyles = makeStyles(() =>
       paddingBottom: "100%",
       width: "100%",
     },
+    list: {
+      width: "100%",
+    },
   })
 );
